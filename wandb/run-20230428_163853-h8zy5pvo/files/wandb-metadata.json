@@ -1,0 +1,205 @@
+{
+    "os": "Linux-5.15.0-69-generic-x86_64-with-glibc2.29",
+    "python": "3.8.10",
+    "heartbeatAt": "2023-04-28T16:38:55.269768",
+    "startedAt": "2023-04-28T16:38:53.925652",
+    "docker": null,
+    "cuda": null,
+    "args": [],
+    "state": "running",
+    "program": "sweep.py",
+    "codePath": "sweep.py",
+    "git": {
+        "remote": "git@github.com:CarlosHernandezP/xai-healthcare.git",
+        "commit": "2af2dfab59446bec54fb51fa17820cb400ba926f"
+    },
+    "email": "crherperez95@gmail.com",
+    "root": "/home/carlos.hernandez/PhD/xai-healthcare",
+    "host": "gpic15",
+    "username": "carlos.hernandez",
+    "executable": "/home/carlos.hernandez/dl/bin/python",
+    "cpu_count": 16,
+    "cpu_count_logical": 32,
+    "cpu_freq": {
+        "current": 2183.3694062500003,
+        "min": 2200.0,
+        "max": 3900.0
+    },
+    "cpu_freq_per_core": [
+        {
+            "current": 2199.736,
+            "min": 2200.0,
+            "max": 3900.0
+        },
+        {
+            "current": 2201.879,
+            "min": 2200.0,
+            "max": 3900.0
+        },
+        {
+            "current": 2193.67,
+            "min": 2200.0,
+            "max": 3900.0
+        },
+        {
+            "current": 2199.758,
+            "min": 2200.0,
+            "max": 3900.0
+        },
+        {
+            "current": 2199.637,
+            "min": 2200.0,
+            "max": 3900.0
+        },
+        {
+            "current": 2199.703,
+            "min": 2200.0,
+            "max": 3900.0
+        },
+        {
+            "current": 2198.936,
+            "min": 2200.0,
+            "max": 3900.0
+        },
+        {
+            "current": 2198.784,
+            "min": 2200.0,
+            "max": 3900.0
+        },
+        {
+            "current": 2216.463,
+            "min": 2200.0,
+            "max": 3900.0
+        },
+        {
+            "current": 2177.278,
+            "min": 2200.0,
+            "max": 3900.0
+        },
+        {
+            "current": 2000.574,
+            "min": 2200.0,
+            "max": 3900.0
+        },
+        {
+            "current": 2191.557,
+            "min": 2200.0,
+            "max": 3900.0
+        },
+        {
+            "current": 2199.141,
+            "min": 2200.0,
+            "max": 3900.0
+        },
+        {
+            "current": 2199.558,
+            "min": 2200.0,
+            "max": 3900.0
+        },
+        {
+            "current": 2198.912,
+            "min": 2200.0,
+            "max": 3900.0
+        },
+        {
+            "current": 2199.468,
+            "min": 2200.0,
+            "max": 3900.0
+        },
+        {
+            "current": 2195.578,
+            "min": 2200.0,
+            "max": 3900.0
+        },
+        {
+            "current": 2199.546,
+            "min": 2200.0,
+            "max": 3900.0
+        },
+        {
+            "current": 2213.288,
+            "min": 2200.0,
+            "max": 3900.0
+        },
+        {
+            "current": 2197.378,
+            "min": 2200.0,
+            "max": 3900.0
+        },
+        {
+            "current": 2198.716,
+            "min": 2200.0,
+            "max": 3900.0
+        },
+        {
+            "current": 2197.489,
+            "min": 2200.0,
+            "max": 3900.0
+        },
+        {
+            "current": 2200.936,
+            "min": 2200.0,
+            "max": 3900.0
+        },
+        {
+            "current": 2196.684,
+            "min": 2200.0,
+            "max": 3900.0
+        },
+        {
+            "current": 2199.289,
+            "min": 2200.0,
+            "max": 3900.0
+        },
+        {
+            "current": 2198.588,
+            "min": 2200.0,
+            "max": 3900.0
+        },
+        {
+            "current": 2199.206,
+            "min": 2200.0,
+            "max": 3900.0
+        },
+        {
+            "current": 2199.612,
+            "min": 2200.0,
+            "max": 3900.0
+        },
+        {
+            "current": 2199.553,
+            "min": 2200.0,
+            "max": 3900.0
+        },
+        {
+            "current": 2199.344,
+            "min": 2200.0,
+            "max": 3900.0
+        },
+        {
+            "current": 2199.451,
+            "min": 2200.0,
+            "max": 3900.0
+        },
+        {
+            "current": 2200.061,
+            "min": 2200.0,
+            "max": 3900.0
+        }
+    ],
+    "disk": {
+        "total": 97.80461883544922,
+        "used": 56.676517486572266
+    },
+    "gpu": "NVIDIA GeForce RTX 3090",
+    "gpu_count": 1,
+    "gpu_devices": [
+        {
+            "name": "NVIDIA GeForce RTX 3090",
+            "memory_total": 25447170048
+        }
+    ],
+    "memory": {
+        "total": 62.643829345703125
+    }
+}
