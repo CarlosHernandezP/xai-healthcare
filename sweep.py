@@ -85,7 +85,6 @@ if __name__ =='__main__':
     parser.add_argument("--n_estimators", type=int, default=100)
     parser.add_argument("--max_depth", type=int, default=3)
     parser.add_argument("--min_samples_split", type=int, default=2)
-    parser.add_argument("--min_weight_fraction_leaf", type=float, default=0.0)
     parser.add_argument("--max_features", type=str, default="auto")
 
     parser.add_argument(

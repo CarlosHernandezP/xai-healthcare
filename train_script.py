@@ -13,6 +13,7 @@ from sklearn_pandas import DataFrameMapper
 
 from sksurv.ensemble import RandomSurvivalForest, GradientBoostingSurvivalAnalysis
 from sksurv.linear_model import CoxPHSurvivalAnalysis
+from sklearn.model_selection import train_test_split
 from sksurv.metrics import integrated_brier_score
 from sksurv.util import Surv
 
@@ -51,7 +52,6 @@ def use_ml_models(data: Tuple, labels: Tuple, args: argparse.Namespace) -> Tuple
             model = RandomSurvivalForest(n_estimators=args.n_estimators,
                                         max_features=args.max_features,
                                         min_samples_split=args.min_samples_split,
-                                        min_weight_fraction_leaf=args.min_weight_fraction_leaf,
                                         max_depth=args.max_depth,
                                         n_jobs=-1, random_state=123)
         else:
@@ -72,15 +72,7 @@ def use_ml_models(data: Tuple, labels: Tuple, args: argparse.Namespace) -> Tuple
     # Fit the model on the training data.
     model.fit(data[0].copy(), labels[0])
     
-    # Define the path for saving the model.
-   # if args.ajcc_subset:
-   #     save_path = f'saved_models/{model_name}_{args.event_type}_miss_ajcc.pkl'
-   # else:
-   #     save_path = f'saved_models/{model_name}_{args.event_type}_miss_{args.missing}.pkl'
-
-    # Save the model as a pickle.
-   # with open(save_path, 'wb') as f:
-   #     pickle.dump(model, f)
+    
     c_index, ib_score = compute_brier_n_c_index(model, data[1], labels[1])
 
     return c_index, ib_score
@@ -93,16 +85,38 @@ def use_dl(data, labels, args):
      # Transform data into numpy arrays
     leave = [(col, None) for col in data[0].columns]
     x_mapper = DataFrameMapper(leave) 
-    data[0] = x_mapper.fit_transform(data[0]).astype('float32')
+    
+    labels_list = [(label, value) for label, value in zip(labels[0][0], labels[0][1])]
+    data_train, data_val, labels_train, labels_val = train_test_split(data[0],
+                                        labels_list, test_size=0.2, random_state=42)
+    # Convert the list into two arrays
+    labels_array = np.array(labels_train)
+    labels_arr1 = labels_array[:, 0]
+    labels_arr2 = labels_array[:, 1]
+
+    # Convert the arrays back into a tuple
+    labels[0] = (labels_arr1, labels_arr2)
+
+    labels_array = np.array(labels_val)
+    labels_arr1 = labels_array[:, 0]
+    labels_arr2 = labels_array[:, 1]
+    
+    ## Add val label
+    labels.append((labels_arr1, labels_arr2))
+    
+
+    ### Number 0 is train, 1 is test and 2 is val
+    data[0] = x_mapper.fit_transform(data_train).astype('float32')
     data[1] = x_mapper.transform(data[1]).astype('float32')
+    data.append(x_mapper.fit_transform(data_val).astype('float32'))
 
     if args.model == 'deepsurv':
         out_features = 1
     elif args.model =='deephit':
-        num_durations = 30
+        num_durations = 40
         labtrans = DeepHitSingle.label_transform(num_durations)
         labels[0] = labtrans.fit_transform(labels[0][0], labels[0][1])
-        label_val = labtrans.transform(labels[1][0], labels[1][1])
+        labels[2] = labtrans.transform(labels[2][0], labels[2][1])
         
         out_features = labtrans.out_features
     batch_norm = True
@@ -125,11 +139,13 @@ def use_dl(data, labels, args):
 
     # Train!
     log = model.fit(input=data[0], target=labels[0], batch_size=512,
-                    epochs=200, val_data = (data[0], labels[0]),val_batch_size=512,
+                    epochs=50, val_data = (data[2], labels[2]),val_batch_size=512,
                     callbacks=callbacks, verbose=True)
+
     pandas_log =log.to_pandas()
-    
-    if False:
+   
+    ## This chunk of code plots the losses for the validation 
+    if True:
         try:
             losses = [[train, val] for (train, val) in zip(pandas_log['train_loss'], pandas_log.index.to_list())]
             table = wandb.Table(data= losses, columns = ['train_loss', 'epoch'])
@@ -148,7 +164,7 @@ def use_dl(data, labels, args):
         model.compute_baseline_hazards()
 
     # Compute metrics
-    c_index, ib_score = compute_brier_n_c_index(model, data[0], labels[0])
+    c_index, ib_score = compute_brier_n_c_index(model, data[1], labels[1])
 
  #   if args.ajcc_subset:
  #       save_path = f'saved_models/{args.model}_{args.event_type}_miss_ajcc.pkl'
@@ -262,3 +278,15 @@ def compute_brier_n_c_index(model : Any, data: Union[np.ndarray, pd.DataFrame], 
         ib_score = integrated_brier_score(labels, labels, surv_event_times, event_times_within_followup)
 
     return c_index, ib_score
+
+
+#### CHUNK OF CODE TO SAVE A MODEL
+    # Define the path for saving the model.
+   # if args.ajcc_subset:
+   #     save_path = f'saved_models/{model_name}_{args.event_type}_miss_ajcc.pkl'
+   # else:
+   #     save_path = f'saved_models/{model_name}_{args.event_type}_miss_{args.missing}.pkl'
+
+    # Save the model as a pickle.
+   # with open(save_path, 'wb') as f:
+   #     pickle.dump(model, f)

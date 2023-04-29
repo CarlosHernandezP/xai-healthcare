@@ -1,0 +1,22 @@
+program: sweep.py
+project: RSF XAI Seer
+entity: catai
+method: random
+metric:
+    name: mean_c
+    goal: maximize
+parameters:
+    n_estimators:
+        values: [100, 200, 300, 400, 500, 600, 800, 900, 1000, 1200]
+    max_depth:
+        distribution: int_uniform
+        min: 2
+        max: 14
+    min_samples_split:
+        distribution: int_uniform
+        min: 4
+        max: 25
+    max_features:
+      values: ['auto', 'sqrt']
+    model:
+      value: rsf 
