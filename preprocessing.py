@@ -201,3 +201,78 @@ def pre_process_seer(df : pd.DataFrame, scale_data : bool=False) -> pd.DataFrame
         final_df = pd.DataFrame(scaled_data, columns=final_df.columns)
     
     return final_df, scaler
+
+
+def pre_process_seer_alternative(df : pd.DataFrame) -> pd.DataFrame:
+    # Age
+    df.loc[:, 'Age_int'] = [int(x[:2]) for x in df['Age recode with single ages and 90+']]
+    df.loc[:, 'age_rec'] = [0.527 if x>=65 else 0.163 if (x<65) and (x>=45) else 0.0809 for x in df['Age_int']]
+
+    # Tumor size
+    df.loc[:, 'tumor_size_rec'] = df['CS tumor size (2004-2015)'].apply(lambda x: np.log(x+10e-6))
+
+    # Tumor extension
+    df.loc[:, 'tumor_extension_rec'] = df['CS extension (2004-2015)']
+
+    # RX Summ--Surg Prim Site (1998+)
+    df['prim_site_rec'] = df['RX Summ--Surg Prim Site (1998+)'].astype(int)
+
+    # Sex
+    df.loc[:, 'sec_rec'] = [1 if x=='Female' else 0 for x in df['Sex']]
+
+    # Race
+    df.loc[:, 'race_rec'] = [0.324 if x=='White' else 0.177 for x in df['Race recode (White, Black, Other)']]
+
+    # Marital status
+    df.loc[:, 'marital_status_rec'] = [0.305 if x=='Married (including common law)' else 0.336 for x in df['Marital status at diagnosis']]
+
+    # Primary Site
+    primary_site_first = ["C44.0-Skin of lip, NOS", "C44.1-Eyelid", "C44.2-External ear", "C44.3-Skin other/unspec parts of face", "C44.4-Skin of scalp and neck"]
+    df.loc[:, 'primary_site_rec'] = [0.454 if x in primary_site_first else 0.283 for x in df['Primary Site - labeled']]
+
+    # T
+    t_1 = ["T1NOS", "T1a", "T1b"]
+    df.loc[:, 'derived_ajcc_t_rec'] = [0.236 if x in t_1 else 0.483 for x in df['Derived AJCC T, 6th ed (2004-2015)']]
+
+    # N
+    df.loc[:, 'derived_ajcc_n_rec'] = [0.291 if x == "N0" else 0.558 for x in df['Derived AJCC N, 6th ed (2004-2015)']]
+
+    # M
+    df.loc[:, 'derived_ajcc_m_rec'] = [0.308 if x == "N0" else 0.616 for x in df['Derived AJCC M, 6th ed (2004-2015)']]
+    
+    # Summary stage 2000 (1998-2017)
+    df.loc[:, 'summary_stage_rec'] = [0.278 if x == "Localized" else 0.635 for x in df['Summary stage 2000 (1998-2017)']]
+
+    # Radiation
+    uncertain = ["None/Unknown", "Refused (1988+)", "Recommended, unknown if administered"]
+    df.loc[:, 'radiation_rec'] = [0.310 if x in uncertain else 0.778 for x in df['Radiation recode']]
+
+    # Chemotherapy recode
+    df.loc[:, 'chemotherapy_rec'] = [0.312 if x=='No/Unknown' else 0.694 for x in df['Chemotherapy recode (yes, no/unk)']]
+
+    #RX Summ--Scope Reg LN Sur (2003+)
+    df.loc[:, 'rx_summ_scope_reg_ln_sur_rec'] = [0.304 if x in ['None', 'Unknown or not applicable'] else 0.348 for x in df['RX Summ--Scope Reg LN Sur (2003+)']]
+
+    # RX Summ--Surg/Rad Seq
+    df.loc[:, 'Surg/Rad_coded'] = [0.310 if x=='No radiation and/or cancer-directed surgery' else 0.778 for x in df['RX Summ--Surg/Rad Seq']]
+
+    # Median household income inflation adj to 2021
+    income_low = ["< $35,000", "$35,000 - $39,999", "$40,000 - $44,999", "$45,000 - $49,999", "$50,000 - $54,999", "$55,000 - $59,999", "$60,000 - $64,999"]
+    income_med = ["$65,000 - $69,999", "$70,000 - $74,999"]
+    df.loc[:, 'income_rec'] = [0.363 if x in income_low else 0.337 if x in income_med else 0.363 for x in df['Median household income inflation adj to 2021']]
+
+
+    # get columns that end with '_rec'
+    coded_cols = [col for col in df.columns if col.endswith('rec')]
+    df_select = df[coded_cols]
+    
+    # create a StandardScaler object
+    scaler = StandardScaler()
+    # fit the scaler to the data and transform it
+    scaled_data = scaler.fit_transform(df_select)
+
+    # convert the numpy array back to a DataFrame
+    df_select_normalised = pd.DataFrame(scaled_data, columns=df_select.columns)
+    
+    return df_select_normalised, scaler
+   
