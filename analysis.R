@@ -55,15 +55,55 @@ age_low <- c("01-04 years", "05-09 years", "10-14 years", "15-19 years", "20-24 
 age_med <- c("45-49 years", "50-54 years", "55-59 years", "60-64 years")
 
 primary_site_first <- c("C44.0-Skin of lip, NOS", "C44.1-Eyelid", "C44.2-External ear", "C44.3-Skin other/unspec parts of face", "C44.4-Skin of scalp and neck")
-primary_site_second <- c("C44.5-Skin of trunk")
+#primary_site_second <- c("C44.5-Skin of trunk")
 
-data_trans <- data_trans %>% 
+#t_0 <- c("T0")
+t_1 <- c("T1NOS", "T1a", "T1b")
+#t_2 <- c("T2NOS", "T2a", "T2b")
+#t_3 <- c("T3NOS", "T3b")
+
+m_1 <- c("M1NOS", "M1a", "M1b", "M1c")
+
+radiation_recode_cat <- c("None/Unknown", "Refused (1988+)", "Recommended, unknown if administered")
+
+rx_summ_scope_reg_ln_sur_cat <- c("None", "Unknown or not applicable")
+
+income_low <- c("< $35,000", "$35,000 - $39,999", "$40,000 - $44,999", "$45,000 - $49,999", "$50,000 - $54,999", "$55,000 - $59,999", "$60,000 - $64,999")
+income_med <- c("$65,000 - $69,999", "$70,000 - $74,999")
+
+data_trans <- data_trans %>%
   mutate(
     age_rec = case_when(age_cat %in% age_low ~ "age_low", age_cat %in% age_med ~ "age_intermediate", .default = "age_advanced"),
     race_rec = case_when(race == "White" ~ "white", .default = "other"),
     marital_status_rec = case_when(marital_status == "Married (including common law)"  ~ "married", .default = "other"),
-    primary_site_rec = case_when(primary_site %in% primary_site_first ~ "first", primary_site %in% primary_site_second ~ "second", "third"),
+    primary_site_rec = case_when(primary_site %in% primary_site_first ~ "first", .default = "other"),
+    derived_ajcc_t_rec = case_when(derived_ajcc_t %in% t_1 ~ "T1", .default = "other"),
+    derived_ajcc_n_rec = case_when(derived_ajcc_n == "N0" ~ "N0", .default = "other"),
+    derived_ajcc_m_rec = case_when(derived_ajcc_m == "M0" ~ "M0", .default = "other"),
+    summary_stage_rec = case_when(summary_stage == "Localized" ~ "localized", .default = "other"),
+    radiation_recode_rec = case_when(radiation_recode %in% radiation_recode_cat ~ "uncertain", .default = "other"),
+    chemotherapy_rec = chemotherapy_recode,
+    rx_summ_scope_reg_ln_sur_rec = case_when(rx_summ_scope_reg_ln_sur %in% rx_summ_scope_reg_ln_sur_cat ~ "not", .default = "other"),
+    rad_seq_rec = case_when(rad_seq == "No radiation and/or cancer-directed surgery" ~ "no", .default = "yes"),
+    income_rec = case_when(income %in% income_low ~ "low", income %in% income_med ~ "med", .default = "high")
   )
 
+var_analysis <- colnames(data_trans)[str_ends(colnames(data_trans), "_rec")]
+var_analysis <- c(var_analysis, "event_indicator")
+data_cat <- data_trans %>% select(any_of(var_analysis))
 
-unique(data_trans$marital_status)
+for (var in var_analysis) {
+  results <- data_cat %>%
+    group_by(across(all_of(var))) %>% 
+    summarise(
+      total = n(), 
+      event = sum(event_indicator), 
+      rate_event = sum(event_indicator)/n()
+    ) %>% 
+    ungroup() %>% 
+    mutate(rate_population = total/sum(total)) %>% 
+    arrange(rate_event)
+  
+  print(results)
+  message("--------------------------------------------------")
+}
