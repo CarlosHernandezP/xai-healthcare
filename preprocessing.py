@@ -203,7 +203,7 @@ def pre_process_seer(df : pd.DataFrame, scale_data : bool=False) -> pd.DataFrame
     return final_df, scaler
 
 
-def pre_process_seer_alternative(df : pd.DataFrame) -> pd.DataFrame:
+def pre_process_seer_alternative(df : pd.DataFrame, scale_data : bool=False) -> pd.DataFrame:
     # Age
     df.loc[:, 'Age_int'] = [int(x[:2]) for x in df['Age recode with single ages and 90+']]
     df.loc[:, 'age_rec'] = [0.527 if x>=65 else 0.163 if (x<65) and (x>=45) else 0.0809 for x in df['Age_int']]
@@ -264,15 +264,17 @@ def pre_process_seer_alternative(df : pd.DataFrame) -> pd.DataFrame:
 
     # get columns that end with '_rec'
     coded_cols = [col for col in df.columns if col.endswith('rec')]
-    df_select = df[coded_cols]
-    
-    # create a StandardScaler object
-    scaler = StandardScaler()
-    # fit the scaler to the data and transform it
-    scaled_data = scaler.fit_transform(df_select)
 
-    # convert the numpy array back to a DataFrame
-    df_select_normalised = pd.DataFrame(scaled_data, columns=df_select.columns)
+    final_df = df[coded_cols]
     
+    scaler = StandardScaler()
+    if scale_data:
+        # fit the scaler to the data and transform it
+        scaled_data = scaler.fit_transform(final_df)
+
+        # convert the numpy array back to a DataFrame
+        final_df = pd.DataFrame(scaled_data, columns=final_df.columns)
+    
+    final_df = df[coded_cols]
     return df_select_normalised, scaler
    
