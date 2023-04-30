@@ -1,7 +1,7 @@
 program: sweep.py
-project: DeepSurv XAI Seer
+project: DeepSurv XAI Seer alternative pre
 entity: catai
-method: random
+method: bayes
 metric:
     name: mean_c
     goal: maximize

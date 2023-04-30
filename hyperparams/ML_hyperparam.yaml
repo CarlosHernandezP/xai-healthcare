@@ -1,7 +1,7 @@
 program: sweep.py
-project: RSF XAI Seer
+project: RSF XAI Seer alternative pre
 entity: catai
-method: random
+method: bayes
 metric:
     name: mean_c
     goal: maximize

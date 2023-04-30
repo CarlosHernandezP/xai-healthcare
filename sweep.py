@@ -3,7 +3,7 @@ import re
 from utils.preprocessing import pre_process_seer
 from utils.script_utils import obtain_data, obtain_data_cval
 
-import utils.train_script
+import utils.train_script as train_script
 import pandas as pd
 
 import wandb

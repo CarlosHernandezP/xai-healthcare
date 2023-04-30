@@ -68,7 +68,7 @@ def main(args):
             training_times=[tp[1] for tp in train_labels],
             model_output_times=model_output_times,
     )
-
+    print('compt_weights_{}.csv'.format(get_model_name(model)))
     computation_exp = compute_weights(explainer, test_data,
                                       model, num_neighbors = 1000,
                                       column_names = test_data.columns,
