@@ -17,7 +17,8 @@ from sksurv.util import Surv
 
 from pycox.evaluation import EvalSurv
 
-from preprocessing import pre_process_seer, pre_process_seer_alternative
+
+from .preprocessing import pre_process_seer, pre_process_seer_alternative
 
 def obtain_data(dl : bool=False):
     """

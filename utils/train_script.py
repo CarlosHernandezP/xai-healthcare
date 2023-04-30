@@ -28,7 +28,6 @@ from xgbse import XGBSEKaplanNeighbors, XGBSEStackedWeibull
 from xgbse.converters import convert_data_to_xgb_format, convert_to_structured
 from xgbse.metrics import approx_brier_score, concordance_index
 
-from script_utils import Concordance, LRScheduler
 from sksurv.util import Surv
 
 

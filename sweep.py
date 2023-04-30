@@ -1,9 +1,9 @@
 import numpy as np
 import re
-from preprocessing import pre_process_seer
-from script_utils import obtain_data, obtain_data_cval
+from utils.preprocessing import pre_process_seer
+from utils.script_utils import obtain_data, obtain_data_cval
 
-import train_script
+import utils.train_script
 import pandas as pd
 
 import wandb
@@ -24,9 +24,10 @@ def main(args):
     wandb.init(entity="catai", settings=args)
     for data, labels in zip(inner_data, inner_labels):
         if deep_learning:
-            cindex, brier, log = train_script.use_dl(data, labels, args)
+            cindex, brier, log, model = train_script.use_dl(data, labels, args)
         else:
-            cindex, brier = train_script.use_ml_models(data, labels, args)
+            cindex, brier, model = train_script.use_ml_models(data, labels, args)
+
         total_c.append(cindex)
         total_b.append(brier)
             

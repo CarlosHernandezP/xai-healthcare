@@ -1,4 +1,5 @@
 import numpy as np
+from functools import partial
 from typing import List
 
 def get_model_name(model):
@@ -52,7 +53,8 @@ def get_output_times(model,
         The output times of the given survival model.
     """
     if 'deep' in str(type(model)).lower():
-        train_times = [x for x in y_train[0]]
+        train_times = [x for x in labels[0]]
+        import ipdb; ipdb.set_trace()
         output_times = np.unique(train_times)
        #if dfs:
        #    output_times = np.array(deephit_times_dfs)
@@ -64,5 +66,28 @@ def get_output_times(model,
         output_times = model.event_times_
     return output_times
 
+def get_predict_fn(model, args):
+    """
+    Returns the predict function for the given survival model.
+    and the type of function
+    """
 
-deephit_times = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+    if args.model == 'rsf':
+        predict_fn = partial(
+                    model.predict_cumulative_hazard_function, return_array=True
+                )
+        type_fn = "cumulative"
+
+    elif args.model == 'deepsurv':
+        def create_chf(fun):
+            def inner(X):
+                Y = fun(X)
+                return Y.T
+            return inner
+
+        predict_fn = create_chf(model.predict_cumulative_hazards) 
+        type_fn = "cumulative"
+    else:
+        raise ValueError("Model not supported")
+
+    return predict_fn, type_fn
