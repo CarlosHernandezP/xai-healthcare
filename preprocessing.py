@@ -276,5 +276,5 @@ def pre_process_seer_alternative(df : pd.DataFrame, scale_data : bool=False) -> 
         final_df = pd.DataFrame(scaled_data, columns=final_df.columns)
     
     final_df = df[coded_cols]
-    return df_select_normalised, scaler
+    return final_df, scaler
    

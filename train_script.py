@@ -139,7 +139,7 @@ def use_dl(data, labels, args):
 
     # Train!
     log = model.fit(input=data[0], target=labels[0], batch_size=512,
-                    epochs=50, val_data = (data[2], labels[2]),val_batch_size=512,
+                    epochs=500, val_data = (data[2], labels[2]),val_batch_size=512,
                     callbacks=callbacks, verbose=True)
 
     pandas_log =log.to_pandas()
