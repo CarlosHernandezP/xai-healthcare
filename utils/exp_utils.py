@@ -52,9 +52,9 @@ def get_output_times(model,
     output_times : numpy.ndarray
         The output times of the given survival model.
     """
-    if 'deep' in str(type(model)).lower():
+    
+    if 'pycox' in str(type(model)).lower():
         train_times = [x for x in labels[0]]
-        import ipdb; ipdb.set_trace()
         output_times = np.unique(train_times)
        #if dfs:
        #    output_times = np.array(deephit_times_dfs)

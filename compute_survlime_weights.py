@@ -18,6 +18,8 @@ from xgbse import XGBSEKaplanNeighbors
 from xgbse._kaplan_neighbors import DEFAULT_PARAMS
 from xgbse.metrics import concordance_index
 
+from sklearn_pandas import DataFrameMapper
+
 # Our very own survLime!
 from survlimepy import SurvLimeExplainer
 #from survlime import survlime_explainer
@@ -41,37 +43,53 @@ def main(args):
     
     train_data = data[0]
     test_data  = data[1]
+    column_names = train_data.columns
     train_labels = labels[0]
     test_labels  = labels[1]
     
     # Load model
     if deep_learning:
         cindex, brier, log, model = train_script.use_dl(data, labels, args)
+        # Convert the list into two arrays
+        train_events = [x for x in train_labels[1]]
+        train_times  = [x for x in train_labels[0]]
+        # Convert data to the right format
+        leave = [(col, None) for col in train_data.columns]
+        x_mapper = DataFrameMapper(leave) 
+        train_data = x_mapper.fit_transform(train_data).astype('float32')
+        test_data  = x_mapper.transform(test_data).astype('float32')
+        
     else:
         cindex, brier, model = train_script.use_ml_models(data, labels, args)
-    # Print cindex and brier in one line
+        ### Number 0 is train, 1 is test and 2 is val
+        # Convert labels to the right format
+        train_events = [tp[0] for tp in train_labels]
+        train_times  = [tp[1] for tp in train_labels]    
+
+
     print(f"{cindex:.3f} & {brier:.3f}")
 
-    if deep_learning:
-        cindex, brier, log, model = train_script.use_dl(data, labels, args)
-    else:
-        cindex, brier, model = train_script.use_ml_models(data, labels, args)
-
     # get model name and output times
-    model_name = get_model_name(model)
     model_output_times = get_output_times(model, train_labels)
     predict_fn, type_fn = get_predict_fn(model, args)
 
     explainer = SurvLimeExplainer(
             training_features=train_data,
-            training_events=[tp[0] for tp in train_labels],
-            training_times=[tp[1] for tp in train_labels],
+            training_events=train_events,
+            training_times= train_times,
             model_output_times=model_output_times,
     )
+
     print('compt_weights_{}.csv'.format(get_model_name(model)))
-    computation_exp = compute_weights(explainer, test_data,
+
+    # Compute the mean values of each column
+    mean_test = test_data.mean()
+
+    # Repeat the mean values 100 times to create a new DataFrame
+    mean_test_df = pd.DataFrame(np.repeat(mean_test.values.reshape(1, -1), 100, axis=0), columns=mean_test.index)
+    computation_exp = compute_weights(explainer, mean_test_df,
                                       model, num_neighbors = 1000,
-                                      column_names = test_data.columns,
+                                      column_names = column_names,
                                       predict_chf = predict_fn,
                                       type_fn = type_fn,
                                       )
@@ -89,17 +107,27 @@ def compute_weights(
     compt_weights = []
     num_pat = num_neighbors
     
-    for test_point in tqdm(x_test.values):
+    # if x_test is a dataframe convert it to numpy array
+    if isinstance(x_test, pd.DataFrame):
+        x_test = x_test.values
+
+    for test_point in tqdm(x_test):
         b = explainer.explain_instance(
             test_point, predict_chf, verbose=False, num_samples=num_pat,
-            type_fn = type_fn
+            type_fn = type_fn, max_hazard_value_allowed=99
         )
 
         compt_weights.append(b)
     
     weights_df  = pd.DataFrame(compt_weights, columns=column_names)
+
+    # Make a component-wise multiplication of weights_df and x_test
+    weights_df = weights_df.mul(x_test)
+
     weights_df.to_csv(
-        'compt_weights_{}.csv'.format(get_model_name(model)))
+        'compt_weights_{}_mean_repeat.csv'.format(get_model_name(model)), index=False
+    )
+
     return weights_df
 
 if __name__ == "__main__":
@@ -137,9 +165,9 @@ if __name__ == "__main__":
 
     # Machine learning Arguments
     parser.add_argument("--alpha", type=float, default=0.0001)
-    parser.add_argument("--n_estimators", type=int, default=100)
-    parser.add_argument("--max_depth", type=int, default=3)
-    parser.add_argument("--min_samples_split", type=int, default=2)
+    parser.add_argument("--n_estimators", type=int, default=400)
+    parser.add_argument("--max_depth", type=int, default=11)
+    parser.add_argument("--min_samples_split", type=int, default=25)
     parser.add_argument("--max_features", type=str, default="auto")
 
     parser.add_argument(

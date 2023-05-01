@@ -116,6 +116,8 @@ def use_dl(data, labels, args):
         labtrans = DeepHitSingle.label_transform(num_durations)
         labels[0] = labtrans.fit_transform(labels[0][0], labels[0][1])
         labels[2] = labtrans.transform(labels[2][0], labels[2][1])
+    else:
+        out_features = 1
         
         out_features = labtrans.out_features
     batch_norm = True
@@ -138,8 +140,8 @@ def use_dl(data, labels, args):
 
     # Train!
     log = model.fit(input=data[0], target=labels[0], batch_size=512,
-                    epochs=500, val_data = (data[2], labels[2]),val_batch_size=512,
-                    callbacks=callbacks, verbose=True)
+                    epochs=50, val_data = (data[2], labels[2]),val_batch_size=512,
+                    callbacks=callbacks, verbose=False)
 
     pandas_log =log.to_pandas()
    
@@ -161,7 +163,6 @@ def use_dl(data, labels, args):
 
     if args.model == 'deepsurv':
         model.compute_baseline_hazards()
-
     # Compute metrics
     c_index, ib_score = compute_brier_n_c_index(model, data[1], labels[1])
 
