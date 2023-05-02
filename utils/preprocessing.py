@@ -218,7 +218,7 @@ def pre_process_seer_alternative(df : pd.DataFrame, scale_data : bool=False) -> 
     df['prim_site_rec'] = df['RX Summ--Surg Prim Site (1998+)'].astype(int)
 
     # Sex
-    df.loc[:, 'sec_rec'] = [1 if x=='Female' else 0 for x in df['Sex']]
+    df.loc[:, 'sex_rec'] = [1 if x=='Female' else 0 for x in df['Sex']]
 
     # Race
     df.loc[:, 'race_rec'] = [0.324 if x=='White' else 0.177 for x in df['Race recode (White, Black, Other)']]
