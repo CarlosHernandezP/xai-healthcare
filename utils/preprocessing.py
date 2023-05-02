@@ -218,7 +218,7 @@ def pre_process_seer_alternative(df : pd.DataFrame, scale_data : bool=False) -> 
     df['prim_site_rec'] = df['RX Summ--Surg Prim Site (1998+)'].astype(int)
 
     # Sex
-    df.loc[:, 'sex_rec'] = [1 if x=='Female' else 0 for x in df['Sex']]
+    df.loc[:, 'sec_rec'] = [1 if x=='Female' else 0 for x in df['Sex']]
 
     # Race
     df.loc[:, 'race_rec'] = [0.324 if x=='White' else 0.177 for x in df['Race recode (White, Black, Other)']]
@@ -238,7 +238,7 @@ def pre_process_seer_alternative(df : pd.DataFrame, scale_data : bool=False) -> 
     df.loc[:, 'derived_ajcc_n_rec'] = [0.291 if x == "N0" else 0.558 for x in df['Derived AJCC N, 6th ed (2004-2015)']]
 
     # M
-    df.loc[:, 'derived_ajcc_m_rec'] = [0.308 if x == "N0" else 0.616 for x in df['Derived AJCC M, 6th ed (2004-2015)']]
+    df.loc[:, 'derived_ajcc_m_rec'] = [0.308 if x == "M0" else 0.616 for x in df['Derived AJCC M, 6th ed (2004-2015)']]
     
     # Summary stage 2000 (1998-2017)
     df.loc[:, 'summary_stage_rec'] = [0.278 if x == "Localized" else 0.635 for x in df['Summary stage 2000 (1998-2017)']]
@@ -254,7 +254,7 @@ def pre_process_seer_alternative(df : pd.DataFrame, scale_data : bool=False) -> 
     df.loc[:, 'rx_summ_scope_reg_ln_sur_rec'] = [0.304 if x in ['None', 'Unknown or not applicable'] else 0.348 for x in df['RX Summ--Scope Reg LN Sur (2003+)']]
 
     # RX Summ--Surg/Rad Seq
-    df.loc[:, 'Surg/Rad_coded'] = [0.310 if x=='No radiation and/or cancer-directed surgery' else 0.778 for x in df['RX Summ--Surg/Rad Seq']]
+    df.loc[:, 'surg_rad_rec'] = [0.310 if x=='No radiation and/or cancer-directed surgery' else 0.778 for x in df['RX Summ--Surg/Rad Seq']]
 
     # Median household income inflation adj to 2021
     income_low = ["< $35,000", "$35,000 - $39,999", "$40,000 - $44,999", "$45,000 - $49,999", "$50,000 - $54,999", "$55,000 - $59,999", "$60,000 - $64,999"]
@@ -275,6 +275,5 @@ def pre_process_seer_alternative(df : pd.DataFrame, scale_data : bool=False) -> 
         # convert the numpy array back to a DataFrame
         final_df = pd.DataFrame(scaled_data, columns=final_df.columns)
     
-    final_df = df[coded_cols]
     return final_df, scaler
    

@@ -79,7 +79,6 @@ def use_ml_models(data: Tuple, labels: Tuple, args: argparse.Namespace) -> Tuple
 def use_dl(data, labels, args):
     """Use DeepSurv to predict survival"""
 
-    num_nodes = [args.num_nodes for i in range(args.num_layers)]
    # num_nodes = [32, 32, 32, 16]
      # Transform data into numpy arrays
     leave = [(col, None) for col in data[0].columns]
@@ -105,43 +104,37 @@ def use_dl(data, labels, args):
     
 
     ### Number 0 is train, 1 is test and 2 is val
-    data[0] = x_mapper.fit_transform(data_train).astype('float32')
+    data[0] = x_mapper.fit_transform(data[0]).astype('float32')
     data[1] = x_mapper.transform(data[1]).astype('float32')
-    data.append(x_mapper.fit_transform(data_val).astype('float32'))
+  # data.append(x_mapper.fit_transform(data_val).astype('float32'))
 
     if args.model == 'deepsurv':
         out_features = 1
     elif args.model =='deephit':
-        num_durations = 40
+        num_durations = args.num_durations
         labtrans = DeepHitSingle.label_transform(num_durations)
         labels[0] = labtrans.fit_transform(labels[0][0], labels[0][1])
         labels[2] = labtrans.transform(labels[2][0], labels[2][1])
+        out_features = labtrans.out_features
     else:
         out_features = 1
         
-        out_features = labtrans.out_features
-    batch_norm = True
-    dropout=0.3
-    output_bias=False
-    lr = 0.0001
-     # Instantiate the model
-  #  net = tt.practical.MLPVanilla(data[0].shape[1], num_nodes, out_features, batch_norm=batch_norm,
-  #                            dropout=dropout, output_bias=output_bias)
-    
+    num_nodes = [args.num_nodes for i in range(args.num_layers)]
+
     net = tt.practical.MLPVanilla(data[0].shape[1], num_nodes, out_features, batch_norm=args.batch_norm,
                                   dropout=args.dropout_prob, output_bias=args.output_bias)
     if args.model == 'deepsurv':
-        model = CoxPH(net, tt.optim.Adam(weight_decay=0.0001))#args.reg))
+        model = CoxPH(net, tt.optim.Adam(weight_decay=args.reg))#args.reg))
     elif args.model == 'deephit':
         model = DeepHitSingle(net, tt.optim.Adam(weight_decay=args.reg), duration_index=labtrans.cuts)
-    callbacks = [tt.callbacks.EarlyStopping(patience=20)]
-    
-    model.optimizer.set_lr(lr)
+
+    callbacks = [tt.callbacks.EarlyStopping(patience=15)]
+    model.optimizer.set_lr(args.lr)
 
     # Train!
-    log = model.fit(input=data[0], target=labels[0], batch_size=512,
-                    epochs=50, val_data = (data[2], labels[2]),val_batch_size=512,
-                    callbacks=callbacks, verbose=False)
+    log = model.fit(input=data[0], target=labels[0], batch_size=args.bs,
+                    epochs=args.epochs, val_data = (data[2], labels[2]),val_batch_size=args.bs,
+                    callbacks=callbacks, verbose=args.verbose)
 
     pandas_log =log.to_pandas()
    

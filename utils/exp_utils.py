@@ -85,7 +85,7 @@ def get_predict_fn(model, args):
                 return Y.T
             return inner
 
-        predict_fn = create_chf(model.predict_cumulative_hazards) 
+        predict_fn =  create_chf(model.predict_surv) 
         type_fn = "cumulative"
     else:
         raise ValueError("Model not supported")

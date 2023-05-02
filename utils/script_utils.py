@@ -28,8 +28,8 @@ def obtain_data(dl : bool=False):
     df_train = pd.read_csv('xai_train_data.csv')
     df_test  = pd.read_csv('xai_test_data.csv')
     
-    df_train_pre, scaler = pre_process_seer(df_train.copy(), scale_data = True)
-    df_test_pre, _ = pre_process_seer(df_test.copy(), scale_data = True)
+    df_train_pre, scaler = pre_process_seer_alternative(df_train.copy(), scale_data = True)
+    df_test_pre, _ = pre_process_seer_alternative(df_test.copy(), scale_data = False)
     
     # Order columns
     column_order = df_train_pre.columns.tolist()
@@ -60,8 +60,8 @@ def obtain_data_cval(dl : bool=False):
     inner_processed = []
     label_inner     = []
     for train_inner, val_inner in inner_folds:
-        train_inner_pre, scaler = pre_process_seer(train_inner.copy(), scale_data = True)
-        val_inner_pre, _ = pre_process_seer(val_inner.copy(), scale_data = False)
+        train_inner_pre, scaler = pre_process_seer_alternative(train_inner.copy(), scale_data = True)
+        val_inner_pre, _ = pre_process_seer_alternative(val_inner.copy(), scale_data = False)
 
         # Order columns
         column_order = train_inner_pre.columns.tolist()
@@ -80,8 +80,8 @@ def obtain_data_cval(dl : bool=False):
     
     
     ## Now do the outer loop
-    df_train_pre, scaler = pre_process_seer(df_train.copy(), scale_data = True)
-    df_test_pre, _ = pre_process_seer(df_test_outer.copy(), scale_data = False)
+    df_train_pre, scaler = pre_process_seer_alternative(df_train.copy(), scale_data = True)
+    df_test_pre, _ = pre_process_seer_alternative(df_test_outer.copy(), scale_data = False)
     
     # Order columns
     column_order = df_train_pre.columns.tolist()

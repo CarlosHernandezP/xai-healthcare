@@ -95,6 +95,9 @@ if __name__ =='__main__':
         help="Model to be used for training it can be xgb, cox, rsf, deepsurv or multi",
     )
 
+    # Add verbose argument whish is a boolean
+    parser.add_argument("--verbose", type=bool, default=False)
+
     args = parser.parse_args()
     
     main(args)

@@ -1,5 +1,5 @@
 program: sweep.py
-project: DeepSurv XAI Seer alternative pre
+project: DeepHit XAI Seer alternative pre
 entity: catai
 method: bayes
 metric:
@@ -7,11 +7,11 @@ metric:
     goal: maximize
 parameters:
   model: 
-    value: deepsurv
+    value: deephit
   num_nodes:
-    values: [16, 32, 64, 128]
+    values: [1, 32, 64, 128, 256, 512]
   num_layers:
-    values: [2,3,4,5,6,7]
+    values: [3,4, 5,6,7, 8, 9]
   batch_norm:
     values: [True, False]
   dropout_prob:
@@ -22,3 +22,9 @@ parameters:
     values: [0.1, 0.01, 0.001, 0.005]
   reg:
     values: [0,0.001,0.0001,0.00001]
+  num_durations:
+    values: [20, 30, 40, 50, 60, 80]
+  bs:
+    values: [16, 32, 64, 256, 512, 1024, 2046]
+  epochs:
+    values: [50, 150, 200, 300, 400, 600]
