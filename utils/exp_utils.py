@@ -54,12 +54,11 @@ def get_output_times(model,
     """
     
     if 'pycox' in str(type(model)).lower():
-        train_times = [x for x in labels[0]]
-        output_times = np.unique(train_times)
-       #if dfs:
-       #    output_times = np.array(deephit_times_dfs)
-       #else:
-       #    output_times = np.array(deephit_times)
+        if 'deephit' in str(type(model)).lower():
+            output_times = model.duration_index
+        else:
+            train_times = [x for x in labels[0]]
+            output_times = np.unique(train_times)
     elif 'xgbse' in str(type(model)).lower():
         output_times = model.time_bins
     else:
@@ -72,7 +71,7 @@ def get_predict_fn(model, args):
     and the type of function
     """
 
-    if args.model == 'rsf':
+    if args.model in ['rsf', 'cox']:
         predict_fn = partial(
                     model.predict_cumulative_hazard_function, return_array=True
                 )
@@ -85,8 +84,11 @@ def get_predict_fn(model, args):
                 return Y.T
             return inner
 
-        predict_fn =  create_chf(model.predict_surv) 
+        predict_fn =  create_chf(model.predict_cumulative_hazards) 
         type_fn = "cumulative"
+    elif args.model == 'deephit':
+        predict_fn = model.predict_surv
+        type_fn = "survival"
     else:
         raise ValueError("Model not supported")
 

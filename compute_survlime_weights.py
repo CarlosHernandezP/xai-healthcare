@@ -51,7 +51,8 @@ def main(args):
     data_final = copy.deepcopy(test_data)
     # Load model
     if deep_learning:
-        cindex, brier, log, model = train_script.use_dl(data, labels, args)
+        cindex, brier, log, model = train_script.use_dl_no_val(data, labels, args)
+            
         # Convert the list into two arrays
         train_events = [x for x in train_labels[1]]
         train_times  = [x for x in train_labels[0]]
@@ -75,7 +76,8 @@ def main(args):
     model_output_times = get_output_times(model, train_labels)
     predict_fn, type_fn = get_predict_fn(model, args)
     
-    #import ipdb;ipdb.set_trace()
+
+    import ipdb;ipdb.set_trace()
     explainer = SurvLimeExplainer(
             training_features=train_data,
             training_events=train_events,
@@ -88,7 +90,8 @@ def main(args):
     # Compute the mean values of each column
     mean_test = data_final.mean()
     # Repeat the mean values 100 times to create a new DataFrame
-    mean_test_df = pd.DataFrame(np.repeat(mean_test.values.reshape(1, -1), 500, axis=0), columns=mean_test.index)
+    mean_test_df = pd.DataFrame(np.repeat(mean_test.values.reshape(1, -1),
+                                          100, axis=0), columns=mean_test.index)
 
 
     computation_exp = explainer.montecarlo_explanation(
@@ -103,7 +106,7 @@ def main(args):
     computation_exp_df  = pd.DataFrame(computation_exp, columns=column_names)
 
     computation_exp_df.to_csv(
-        'computed_weights/compt_weights_{}_montecarlo_500.csv'.format(get_model_name(model)), index=False
+        'computed_weights/compt_weights_{}_montecarlo.csv'.format(get_model_name(model)), index=False
     )
 
    #computation_exp = compute_weights(explainer, mean_test_df,
@@ -113,43 +116,6 @@ def main(args):
    #                                  type_fn = type_fn,
    #                                  )
 
-
-
-def compute_weights(
-    explainer: SurvLimeExplainer,
-    x_test:  pd.DataFrame,
-    model: CoxPHSurvivalAnalysis,
-    num_neighbors: int = 1000,
-    column_names: list = None,
-    predict_chf = None,
-    type_fn = 'cumulative',
-
-) -> pd.DataFrame:
-    compt_weights = []
-    num_pat = num_neighbors
-    
-    # if x_test is a dataframe convert it to numpy array
-    if isinstance(x_test, pd.DataFrame):
-        x_test = x_test.values
-
-    for test_point in tqdm(x_test):
-        b = explainer.explain_instance(
-            test_point, predict_chf, verbose=False, num_samples=num_pat,
-            type_fn = type_fn, max_hazard_value_allowed=99
-        )
-
-        compt_weights.append(b)
-    
-    weights_df  = pd.DataFrame(compt_weights, columns=column_names)
-
-    # Make a component-wise multiplication of weights_df and x_test
-    weights_df = weights_df.mul(x_test)
-
-    weights_df.to_csv(
-        'compt_weights_{}_mean_repeat.csv'.format(get_model_name(model)), index=False
-    )
-
-    return weights_df
 
 if __name__ == "__main__":
 

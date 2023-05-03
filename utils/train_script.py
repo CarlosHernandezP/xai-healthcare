@@ -1,6 +1,7 @@
 import argparse
 import pickle
 from typing import List, Tuple, Union, Any
+import copy
 
 import numpy as np
 import pandas as pd
@@ -78,15 +79,14 @@ def use_ml_models(data: Tuple, labels: Tuple, args: argparse.Namespace) -> Tuple
 
 def use_dl(data, labels, args):
     """Use DeepSurv to predict survival"""
-
-   # num_nodes = [32, 32, 32, 16]
-     # Transform data into numpy arrays
-    leave = [(col, None) for col in data[0].columns]
-    x_mapper = DataFrameMapper(leave) 
     
+
+    data_save = copy.deepcopy(data)
+
     labels_list = [(label, value) for label, value in zip(labels[0][0], labels[0][1])]
-    data_train, data_val, labels_train, labels_val = train_test_split(data[0],
+    data_train, data_val, labels_train, labels_val = train_test_split(data_save[0],
                                         labels_list, test_size=0.2, random_state=42)
+
     # Convert the list into two arrays
     labels_array = np.array(labels_train)
     labels_arr1 = labels_array[:, 0]
@@ -104,9 +104,9 @@ def use_dl(data, labels, args):
     
 
     ### Number 0 is train, 1 is test and 2 is val
-    data[0] = x_mapper.fit_transform(data[0]).astype('float32')
-    data[1] = x_mapper.transform(data[1]).astype('float32')
-  # data.append(x_mapper.fit_transform(data_val).astype('float32'))
+    data_save[0] = data_train.values.astype('float32')
+    data_save[1] = data_save[1].values.astype('float32')
+    data_save.append(data_val.values.astype('float32'))
 
     if args.model == 'deepsurv':
         out_features = 1
@@ -121,7 +121,7 @@ def use_dl(data, labels, args):
         
     num_nodes = [args.num_nodes for i in range(args.num_layers)]
 
-    net = tt.practical.MLPVanilla(data[0].shape[1], num_nodes, out_features, batch_norm=args.batch_norm,
+    net = tt.practical.MLPVanilla(data_save[0].shape[1], num_nodes, out_features, batch_norm=args.batch_norm,
                                   dropout=args.dropout_prob, output_bias=args.output_bias)
     if args.model == 'deepsurv':
         model = CoxPH(net, tt.optim.Adam(weight_decay=args.reg))#args.reg))
@@ -132,8 +132,8 @@ def use_dl(data, labels, args):
     model.optimizer.set_lr(args.lr)
 
     # Train!
-    log = model.fit(input=data[0], target=labels[0], batch_size=args.bs,
-                    epochs=args.epochs, val_data = (data[2], labels[2]),val_batch_size=args.bs,
+    log = model.fit(input=data_save[0], target=labels[0], batch_size=args.bs,
+                    epochs=args.epochs, val_data = (data_save[2], labels[2]),val_batch_size=args.bs,
                     callbacks=callbacks, verbose=args.verbose)
 
     pandas_log =log.to_pandas()
@@ -157,7 +157,9 @@ def use_dl(data, labels, args):
     if args.model == 'deepsurv':
         model.compute_baseline_hazards()
     # Compute metrics
-    c_index, ib_score = compute_brier_n_c_index(model, data[1], labels[1])
+    c_index, ib_score = compute_brier_n_c_index(model, data_save[1], labels[1])
+    # Print the C index and Brier score in a single line
+    print('C-index: {:.4f}, '.format(c_index), 'IBS: {:.4f}'.format(ib_score))
 
  #   if args.ajcc_subset:
  #       save_path = f'saved_models/{args.model}_{args.event_type}_miss_ajcc.pkl'
@@ -273,6 +275,74 @@ def compute_brier_n_c_index(model : Any, data: Union[np.ndarray, pd.DataFrame], 
     return c_index, ib_score
 
 
+def use_dl_no_val(data, labels, args):
+    """Use DeepSurv to predict survival"""
+    
+
+    data_save = copy.deepcopy(data)
+
+    ### Number 0 is train, 1 is test and 2 is val
+    data_save[0] = data_save[0].values.astype('float32')
+    data_save[1] = data_save[1].values.astype('float32')
+
+    if args.model == 'deepsurv':
+        out_features = 1
+    elif args.model =='deephit':
+        num_durations = args.num_durations
+        labtrans = DeepHitSingle.label_transform(num_durations)
+        labels[0] = labtrans.fit_transform(labels[0][0], labels[0][1])
+        out_features = labtrans.out_features
+    else:
+        out_features = 1
+        
+    num_nodes = [args.num_nodes for i in range(args.num_layers)]
+
+    net = tt.practical.MLPVanilla(data_save[0].shape[1], num_nodes, out_features, batch_norm=args.batch_norm,
+                                  dropout=args.dropout_prob, output_bias=args.output_bias)
+    if args.model == 'deepsurv':
+        model = CoxPH(net, tt.optim.Adam(weight_decay=args.reg))#args.reg))
+    elif args.model == 'deephit':
+        model = DeepHitSingle(net, tt.optim.Adam(weight_decay=args.reg), duration_index=labtrans.cuts)
+
+    model.optimizer.set_lr(args.lr)
+
+    # Train!
+    log = model.fit(input=data_save[0], target=labels[0], batch_size=args.bs,
+                    epochs=args.epochs, val_batch_size=args.bs,
+                     verbose=args.verbose)
+
+    pandas_log =log.to_pandas()
+   
+    ## This chunk of code plots the losses for the validation 
+    if True:
+        try:
+            losses = [[train, val] for (train, val) in zip(pandas_log['train_loss'], pandas_log.index.to_list())]
+            table = wandb.Table(data= losses, columns = ['train_loss', 'epoch'])
+            wandb.log({"train_loss" : wandb.plot.line(table, "epoch", "train_loss",
+                       stroke = None,  title="Train loss")})
+
+            losses = [[loss, val] for (loss, val) in zip(pandas_log['val_loss'], pandas_log.index.to_list())]
+            table = wandb.Table(data= losses, columns = ['val_loss', 'epoch'])
+            wandb.log({"val_loss" : wandb.plot.line(table, "epoch", "val_loss",
+                       stroke = None,  title="Validation loss")})
+        except:
+            print('Could not log loss')
+
+
+    if args.model == 'deepsurv':
+        model.compute_baseline_hazards()
+    # Compute metrics
+    c_index, ib_score = compute_brier_n_c_index(model, data_save[1], labels[1])
+    # Print the C index and Brier score in a single line
+    print('C-index: {:.4f}, '.format(c_index), 'IBS: {:.4f}'.format(ib_score))
+
+ #   if args.ajcc_subset:
+ #       save_path = f'saved_models/{args.model}_{args.event_type}_miss_ajcc.pkl'
+ #   else:
+ #       save_path = f'saved_models/{args.model}_{args.event_type}_miss_{args.missing}.pkl'
+   #if data[2].shape[0] >800:
+   #    model.save_net(save_path)
+    return c_index, ib_score, log, model
 #### CHUNK OF CODE TO SAVE A MODEL
     # Define the path for saving the model.
    # if args.ajcc_subset:
