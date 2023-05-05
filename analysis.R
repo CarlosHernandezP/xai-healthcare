@@ -1,10 +1,24 @@
 library(tidyverse)
+library(xtable)
 
 data_folder <- "."
 file_name <- "xai_train_data.csv"
 file_foder <- file.path(data_folder, file_name)
 
-#
+# 00 ----
+eda <- function(df, var) {
+  results <- df %>%
+    group_by(across(all_of(var))) %>% 
+    summarise(
+      total = n(), 
+      num_events = sum(event_indicator), 
+      rate_events = sum(event_indicator)/n()
+    ) %>% 
+    ungroup() %>% 
+    mutate(rate_population = total/sum(total)) %>% 
+    arrange(rate_events)
+  return(results)
+}
 
 # 01 read data ----
 data <- readr::read_csv(file_foder)
@@ -19,8 +33,8 @@ new_cols <- c("age_cat", "age_yearly", "cs_tumor_size", "cs_extension",
 
 data_cols <- data
 colnames(data_cols) <- new_cols
-View(data)
-View(data_cols)
+# View(data)
+# View(data_cols)
 # 02 Data manipulation ----
 # Create target variables
 data_trans <- data_cols %>% 
@@ -36,16 +50,7 @@ data_cat$event_indicator <- data_trans$event_indicator
 variables <- setdiff(colnames(data_cat), c("event_indicator"))
 
 for (var in variables) {
-  results <- data_cat %>%
-    group_by(across(all_of(var))) %>% 
-    summarise(
-      total = n(), 
-      event = sum(event_indicator), 
-      rate_event = 100 * sum(event_indicator)/n()
-    ) %>% 
-    ungroup() %>% 
-    mutate(rate_population = 100 * total/sum(total))
-    
+  results <- eda(data_cat, var)
   print(results)
   print("-----------")
 }
@@ -71,8 +76,12 @@ rx_summ_scope_reg_ln_sur_cat <- c("None", "Unknown or not applicable")
 income_low <- c("< $35,000", "$35,000 - $39,999", "$40,000 - $44,999", "$45,000 - $49,999", "$50,000 - $54,999", "$55,000 - $59,999", "$60,000 - $64,999")
 income_med <- c("$65,000 - $69,999", "$70,000 - $74,999")
 
-data_trans <- data_trans %>%
+data_rec <- data_trans %>%
   mutate(
+    tumor_size = cs_tumor_size,
+    tumor_size_rec = cut_number(tumor_size, 4),
+    tumor_extension_rec = cut_number(cs_extension, 3),
+    prime_site_rec = cut_number(rx_summ_surg_prim_site, 4),
     age_rec = case_when(age_cat %in% age_low ~ "age_low", age_cat %in% age_med ~ "age_intermediate", .default = "age_advanced"),
     race_rec = case_when(race == "White" ~ "white", .default = "other"),
     marital_status_rec = case_when(marital_status == "Married (including common law)"  ~ "married", .default = "other"),
@@ -88,22 +97,24 @@ data_trans <- data_trans %>%
     income_rec = case_when(income %in% income_low ~ "low", income %in% income_med ~ "med", .default = "high")
   )
 
-var_analysis <- colnames(data_trans)[str_ends(colnames(data_trans), "_rec")]
+var_analysis <- colnames(data_rec)[str_ends(colnames(data_rec), "_rec")]
 var_analysis <- c(var_analysis, "event_indicator")
-data_cat <- data_trans %>% select(any_of(var_analysis))
+eda(data_rec, "derived_ajcc_t")
 
 for (var in var_analysis) {
-  results <- data_cat %>%
-    group_by(across(all_of(var))) %>% 
-    summarise(
-      total = n(), 
-      event = sum(event_indicator), 
-      rate_event = sum(event_indicator)/n()
-    ) %>% 
-    ungroup() %>% 
-    mutate(rate_population = total/sum(total)) %>% 
-    arrange(rate_event)
-  
+  results <- eda(data_rec, var)
   print(results)
   message("--------------------------------------------------")
 }
+
+xtable::xtable(eda(data_rec, "tumor_size_rec"))
+xtable::xtable(eda(data_rec, "tumor_extension_rec"))
+xtable::xtable(eda(data_rec, "prime_site_rec"))
+mean(data_cat$event_indicator)
+sd(data_cat$event_indicator)
+
+mean(data$`Survival months`)
+sd(data$`Survival months`)
+
+data_rec$primary_site_rec
+data_rec$prime_site_rec
